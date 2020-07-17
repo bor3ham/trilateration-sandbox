@@ -2720,6 +2720,11 @@ node-releases@^1.1.58:
   resolved "https://registry.yarnpkg.com/node-releases/-/node-releases-1.1.59.tgz#4d648330641cec704bff10f8e4fe28e453ab8e8e"
   integrity sha512-H3JrdUczbdiwxN5FuJPyCHnGHIFqQ0wWxo+9j1kAXAzqNMAHlo+4I/sYYxpyK0irQ73HgdiyzD32oqQDcU2Osw==
 
+node-trilateration@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/node-trilateration/-/node-trilateration-1.0.0.tgz#35b87a1ca2b049c444c58b6aee8b7ffb5c6eca1e"
+  integrity sha1-Nbh6HKKwScRExYtq7ot/+1xuyh4=
+
 normalize-path@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/normalize-path/-/normalize-path-2.1.1.tgz#1ab28b556e198363a8c1a6f7e6fa20137fe6aed9"

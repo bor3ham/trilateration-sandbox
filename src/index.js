@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import ReactDom from 'react-dom'
+import trilateration from 'node-trilateration'
 
 const CANVAS_WIDTH = 1000
 const CANVAS_HEIGHT = 800
@@ -17,37 +18,49 @@ function TrilaterationSandbox(props) {
       return
     }
     const context = canvasRef.current.getContext('2d')
+
     // fill background white
     context.beginPath()
     context.rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
     context.fillStyle = '#fff'
     context.fill()
-    // draw beacon a
-    context.beginPath()
-    context.arc(beaconA.x, beaconA.y, 5, 0, 2 * Math.PI)
-    context.fillStyle = '#0b0'
-    context.fill()
-    // draw beacon b
-    context.beginPath()
-    context.arc(beaconB.x, beaconB.y, 5, 0, 2 * Math.PI)
-    context.fillStyle = '#e0e'
-    context.fill()
-    // draw beacon c
-    context.beginPath()
-    context.arc(beaconC.x, beaconC.y, 5, 0, 2 * Math.PI)
-    context.fillStyle = '#0ee'
-    context.fill()
+
+    // draw beacons
+    const drawBeacon = (beacon, colour) => {
+      context.beginPath()
+      context.arc(beacon.x, beacon.y, 5, 0, 2 * Math.PI)
+      context.fillStyle = colour
+      context.fill()
+    }
+    drawBeacon(beaconA, '#0b0')
+    drawBeacon(beaconB, '#e0e')
+    drawBeacon(beaconC, '#f00')
+
     // draw test spot
     context.beginPath()
-    context.arc(testSpot.x, testSpot.y, 10, 0, 2 * Math.PI)
-    context.strokeStyle = '#f00'
+    context.arc(testSpot.x, testSpot.y, 20, 0, 2 * Math.PI)
+    context.strokeStyle = '#44e4'
     context.lineWidth = '2'
     context.stroke()
+
+    // calculate result spot
+    const distance = (loc1, loc2) => {
+      return Math.pow(Math.pow(loc1.x - loc2.x, 2) + Math.pow(loc1.y - loc2.y, 2), 0.5)
+    }
+    const result = trilateration.calculate([
+      {...beaconA, distance: distance(testSpot, beaconA)},
+      {...beaconB, distance: distance(testSpot, beaconB)},
+      {...beaconC, distance: distance(testSpot, beaconC)},
+    ])
+    // draw result spot
+    context.beginPath()
+    context.arc(result.x, result.y, 5, 0, 2 * Math.PI)
+    context.fillStyle = '#44e'
+    context.fill()
   }
 
-  // draw on any change
+  // redraw on any change
   useEffect(() => {
-    console.log('there was a change')
     redraw()
   }, [
     testSpot.x,
@@ -74,6 +87,7 @@ function TrilaterationSandbox(props) {
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
         onClick={handleCanvasClick}
+        style={{cursor: 'crosshair'}}
       />
     </>
   )
