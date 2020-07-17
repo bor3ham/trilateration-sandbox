@@ -8,7 +8,8 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build:js": "./node_modules/.bin/webpack-cli"
+    "build:js": "./node_modules/.bin/webpack-cli",
+    "watch:js": "./node_modules/.bin/webpack-cli --watch"
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",
