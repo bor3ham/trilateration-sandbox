@@ -13,6 +13,8 @@ function TrilaterationSandbox(props) {
   const [beaconB, setBeaconB] = useState({x: CANVAS_WIDTH * 0.7, y: CANVAS_HEIGHT * 0.25})
   const [beaconC, setBeaconC] = useState({x: CANVAS_WIDTH * 0.4, y: CANVAS_HEIGHT * 0.8})
 
+  const [clicking, setClicking] = useState(false)
+
   const redraw = () => {
     if (!canvasRef.current) {
       return
@@ -59,6 +61,36 @@ function TrilaterationSandbox(props) {
     context.fill()
   }
 
+  const updateTestSpot = (event) => {
+    const canvasRect = canvasRef.current.getBoundingClientRect()
+    const x = event.clientX - canvasRect.x
+    const y = event.clientY - canvasRect.y
+    setTestSpot({x, y})
+  }
+  const handleCanvasMouseDown = (event) => {
+    if (!canvasRef.current) {
+      return
+    }
+    setClicking(true)
+    updateTestSpot(event)
+  }
+  const handleCanvasMouseMove = (event) => {
+    if (!clicking) {
+      return
+    }
+    updateTestSpot(event)
+  }
+  const handleDocumentMouseUp = (event) => {
+    setClicking(false)
+  }
+
+  // document mouse listener
+  useEffect(() => {
+    document.addEventListener('mouseup', handleDocumentMouseUp)
+    return () => {
+      document.removeEventListener('mouseup', handleDocumentMouseUp)
+    }
+  }, [])
   // redraw on any change
   useEffect(() => {
     redraw()
@@ -66,16 +98,6 @@ function TrilaterationSandbox(props) {
     testSpot.x,
     testSpot.y,
   ])
-
-  const handleCanvasClick = (event) => {
-    if (!canvasRef.current) {
-      return
-    }
-    const canvasRect = canvasRef.current.getBoundingClientRect()
-    const x = event.clientX - canvasRect.x
-    const y = event.clientY - canvasRect.y
-    setTestSpot({x, y})
-  }
 
   return (
     <>
@@ -86,7 +108,8 @@ function TrilaterationSandbox(props) {
         ref={canvasRef}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
-        onClick={handleCanvasClick}
+        onMouseDown={handleCanvasMouseDown}
+        onMouseMove={handleCanvasMouseMove}
         style={{cursor: 'crosshair'}}
       />
     </>
