@@ -1,0 +1,10 @@
+{
+  "name": "trilateration-sandbox",
+  "version": "0.0.1",
+  "description": "Sandbox environment for stress-testing trilateration algorithms.",
+  "main": "index.js",
+  "repository": "git@github.com:bor3ham/trilateration-sandbox.git",
+  "author": "Michael Boreham <bor3ham@gmail.com>",
+  "license": "MIT",
+  "private": false
+}
