@@ -5,6 +5,14 @@ import trilateration from 'node-trilateration'
 const CANVAS_WIDTH = 1000
 const CANVAS_HEIGHT = 600
 
+const TRANSLATION_MIN = -500
+const TRANSLATION_MAX = 500
+const TRANSLATION_STEP = 50
+
+const SCALE_MIN = 0.1
+const SCALE_MAX = 5
+const SCALE_STEP = 0.1
+
 function TrilaterationSandbox(props) {
   const canvasRef = useRef(null)
   const [testSpot, setTestSpot] = useState({x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2})
@@ -13,6 +21,8 @@ function TrilaterationSandbox(props) {
   const [beaconB, setBeaconB] = useState({x: CANVAS_WIDTH * 0.7, y: CANVAS_HEIGHT * 0.25})
   const [beaconC, setBeaconC] = useState({x: CANVAS_WIDTH * 0.4, y: CANVAS_HEIGHT * 0.8})
 
+  const [xTranslation, setXTranslation] = useState(0)
+  const [yTranslation, setYTranslation] = useState(0)
   const [xScale, setXScale] = useState(1)
   const [yScale, setYScale] = useState(1)
   const [uniformScaleAdjustment, setUniformScaleAdjustment] = useState(true)
@@ -27,14 +37,14 @@ function TrilaterationSandbox(props) {
 
     const transform = (loc) => {
       return {
-        x: loc.x * xScale,
-        y: loc.y * yScale,
+        x: (loc.x + +xTranslation) * xScale,
+        y: (loc.y + +yTranslation) * yScale,
       }
     }
     const untransform = (loc) => {
       return {
-        x: loc.x / xScale,
-        y: loc.y / yScale,
+        x: (loc.x / xScale) - +xTranslation,
+        y: (loc.y / yScale) - +yTranslation,
       }
     }
 
@@ -120,6 +130,12 @@ function TrilaterationSandbox(props) {
   const handleDocumentMouseUp = (event) => {
     setClicking(false)
   }
+  const handleXTranslationChange = (event) => {
+    setXTranslation(event.target.value)
+  }
+  const handleYTranslationChange = (event) => {
+    setYTranslation(event.target.value)
+  }
   const handleXScaleChange = (event) => {
     setXScale(event.target.value)
   }
@@ -143,6 +159,8 @@ function TrilaterationSandbox(props) {
   }, [
     testSpot.x,
     testSpot.y,
+    xTranslation,
+    yTranslation,
     xScale,
     yScale,
     uniformScaleAdjustment,
@@ -160,12 +178,36 @@ function TrilaterationSandbox(props) {
         test spot.
       </p>
       <div>
+        <label>X Translation</label>
+        <input
+          type="range"
+          min={TRANSLATION_MIN}
+          max={TRANSLATION_MAX}
+          step={TRANSLATION_STEP}
+          value={xTranslation}
+          onChange={handleXTranslationChange}
+        />
+        <input type="text" value={xTranslation} onChange={handleXTranslationChange} />
+      </div>
+      <div>
+        <label>Y Translation</label>
+        <input
+          type="range"
+          min={TRANSLATION_MIN}
+          max={TRANSLATION_MAX}
+          step={TRANSLATION_STEP}
+          value={yTranslation}
+          onChange={handleYTranslationChange}
+        />
+        <input type="text" value={yTranslation} onChange={handleYTranslationChange} />
+      </div>
+      <div>
         <label>X Scale</label>
         <input
           type="range"
-          min={0.1}
-          max={5}
-          step={0.1}
+          min={SCALE_MIN}
+          max={SCALE_MAX}
+          step={SCALE_STEP}
           value={xScale}
           onChange={handleXScaleChange}
         />
@@ -175,9 +217,9 @@ function TrilaterationSandbox(props) {
         <label>Y Scale</label>
         <input
           type="range"
-          min={0.1}
-          max={5}
-          step={0.1}
+          min={SCALE_MIN}
+          max={SCALE_MAX}
+          step={SCALE_STEP}
           value={yScale}
           onChange={handleYScaleChange}
         />
