@@ -7,11 +7,13 @@ const CANVAS_HEIGHT = 600
 
 const TRANSLATION_MIN = -500
 const TRANSLATION_MAX = 500
-const TRANSLATION_STEP = 50
+const TRANSLATION_STEP = 10
+
+const ROTATION_STEP = 1
 
 const SCALE_MIN = 0.1
 const SCALE_MAX = 5
-const SCALE_STEP = 0.1
+const SCALE_STEP = 0.025
 
 function TrilaterationSandbox(props) {
   const canvasRef = useRef(null)
@@ -23,9 +25,12 @@ function TrilaterationSandbox(props) {
 
   const [xTranslation, setXTranslation] = useState(0)
   const [yTranslation, setYTranslation] = useState(0)
+  const [rotation, setRotation] = useState(0)
   const [xScale, setXScale] = useState(1)
   const [yScale, setYScale] = useState(1)
+  const [lockScale, setLockScale] = useState(true)
   const [uniformScaleAdjustment, setUniformScaleAdjustment] = useState(true)
+  const [drawTransformation, setDrawTransformation] = useState(false)
 
   const [clicking, setClicking] = useState(false)
 
@@ -35,17 +40,36 @@ function TrilaterationSandbox(props) {
     }
     const context = canvasRef.current.getContext('2d')
 
+    const radian = (degree) => {
+      return (degree / 180) * Math.PI
+    }
     const transform = (loc) => {
-      return {
-        x: (loc.x + +xTranslation) * xScale,
-        y: (loc.y + +yTranslation) * yScale,
-      }
+      let x = loc.x
+      let y = loc.y
+      x += +xTranslation
+      y += +yTranslation
+      const rotationRadian = radian(rotation)
+      const origX = x
+      const origY = y
+      x = (origX * Math.cos(rotationRadian)) - (origY * Math.sin(rotationRadian))
+      y = (origY * Math.cos(rotationRadian)) + (origX * Math.sin(rotationRadian))
+      x *= xScale
+      y *= yScale
+      return {x, y}
     }
     const untransform = (loc) => {
-      return {
-        x: (loc.x / xScale) - +xTranslation,
-        y: (loc.y / yScale) - +yTranslation,
-      }
+      let x = loc.x
+      let y = loc.y
+      x /= xScale
+      y /= yScale
+      const rotationRadian = radian(-rotation)
+      const origX = x
+      const origY = y
+      x = (origX * Math.cos(rotationRadian)) - (origY * Math.sin(rotationRadian))
+      y = (origY * Math.cos(rotationRadian)) + (origX * Math.sin(rotationRadian))
+      x -= +xTranslation
+      y -= +yTranslation
+      return {x, y}
     }
 
     // fill background white
@@ -64,6 +88,12 @@ function TrilaterationSandbox(props) {
     drawBeacon(beaconA, '#0b0')
     drawBeacon(beaconB, '#e0e')
     drawBeacon(beaconC, '#f00')
+
+    if (drawTransformation) {
+      drawBeacon(transform(beaconA), '#0b03')
+      drawBeacon(transform(beaconB), '#e0e3')
+      drawBeacon(transform(beaconC), '#f003')
+    }
 
     // draw test spot
     context.beginPath()
@@ -130,20 +160,46 @@ function TrilaterationSandbox(props) {
   const handleDocumentMouseUp = (event) => {
     setClicking(false)
   }
+
+  const handleTransformationReset = (event) => {
+    if (event) {
+      event.preventDefault()
+    }
+    setXTranslation(0)
+    setYTranslation(0)
+    setRotation(0)
+    setXScale(1)
+    setYScale(1)
+  }
   const handleXTranslationChange = (event) => {
     setXTranslation(event.target.value)
   }
   const handleYTranslationChange = (event) => {
     setYTranslation(event.target.value)
   }
+  const handleRotationChange = (event) => {
+    setRotation(event.target.value)
+  }
   const handleXScaleChange = (event) => {
     setXScale(event.target.value)
+    if (lockScale) {
+      setYScale(event.target.value)
+    }
   }
   const handleYScaleChange = (event) => {
     setYScale(event.target.value)
+    if (lockScale) {
+      setXScale(event.target.value)
+    }
+  }
+  const handleLockScaleChange = (event) => {
+    setLockScale(event.target.checked)
   }
   const handleUniformScaleAdjustmentChange = (event) => {
     setUniformScaleAdjustment(event.target.checked)
+  }
+  const handleDrawTransformationChange = (event) => {
+    setDrawTransformation(event.target.checked)
   }
 
   // document mouse listener
@@ -161,22 +217,29 @@ function TrilaterationSandbox(props) {
     testSpot.y,
     xTranslation,
     yTranslation,
+    rotation,
     xScale,
     yScale,
     uniformScaleAdjustment,
+    drawTransformation,
   ])
 
   return (
     <>
       <h1>Trilateration Sandbox</h1>
-      <p>Welcome to the trilateration sandbox</p>
       <p>Test location: ({testSpot.x}, {testSpot.y})</p>
-      <h2>Transformation</h2>
+      <p><em>Click canvas below to change</em></p>
       <p>
         Identify inaccuracies by adjusting the following transformation, which is applied to the
         trilateration algorithm's beacon locations then reversed to draw relative to the original
         test spot.
       </p>
+      <p>
+        The blue ring represents the exact location of your test spot. The blue dot is the result
+        of the trilateration algorithm. If all goes well, the dot appears exactly in the centre
+        of the ring.
+      </p>
+      <h2>Transformation (<a href="#" onClick={handleTransformationReset}>reset</a>)</h2>
       <div>
         <label>X Translation</label>
         <input
@@ -202,6 +265,18 @@ function TrilaterationSandbox(props) {
         <input type="text" value={yTranslation} onChange={handleYTranslationChange} />
       </div>
       <div>
+        <label>Rotation</label>
+        <input
+          type="range"
+          min={-180}
+          max={180}
+          step={ROTATION_STEP}
+          value={rotation}
+          onChange={handleRotationChange}
+        />
+        <input type="text" value={rotation} onChange={handleRotationChange} />
+      </div>
+      <div>
         <label>X Scale</label>
         <input
           type="range"
@@ -224,6 +299,14 @@ function TrilaterationSandbox(props) {
           onChange={handleYScaleChange}
         />
         <input type="text" value={yScale} onChange={handleYScaleChange} />
+        <label>
+          <input
+            type="checkbox"
+            checked={lockScale}
+            onChange={handleLockScaleChange}
+          />
+          Lock Scales Together
+        </label>
       </div>
       <div>
         <label>
@@ -233,6 +316,21 @@ function TrilaterationSandbox(props) {
             onChange={handleUniformScaleAdjustmentChange}
           />
           Uniform Scale Adjustment
+        </label>
+        <p>
+          Use this setting to emulate uniform scaling adjustment - a hack to handle scaling of
+          beacons by a uniform scaling factor even with a trilateration algorithm that is
+          unit-dependent.
+        </p>
+      </div>
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={drawTransformation}
+            onChange={handleDrawTransformationChange}
+          />
+          Draw Transformation (for debug purposes)
         </label>
       </div>
       <canvas
