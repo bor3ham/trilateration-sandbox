@@ -11,9 +11,13 @@ const TRANSLATION_STEP = 10
 
 const ROTATION_STEP = 1
 
-const SCALE_MIN = 0.1
-const SCALE_MAX = 5
-const SCALE_STEP = 0.025
+const BEACON_SCALE_MIN = 0.1
+const BEACON_SCALE_MAX = 5
+const BEACON_SCALE_STEP = 0.025
+
+const DISTANCE_SCALE_MIN = 0.1
+const DISTANCE_SCALE_MAX = 5
+const DISTANCE_SCALE_STEP = 0.025
 
 function TrilaterationSandbox(props) {
   const canvasRef = useRef(null)
@@ -30,7 +34,9 @@ function TrilaterationSandbox(props) {
   const [yScale, setYScale] = useState(1)
   const [lockScale, setLockScale] = useState(true)
   const [uniformScaleAdjustment, setUniformScaleAdjustment] = useState(true)
+  const [distanceScale, setDistanceScale] = useState(1)
   const [drawTransformation, setDrawTransformation] = useState(false)
+  const [drawCalculation, setDrawCalculation] = useState(true)
 
   const [clicking, setClicking] = useState(false)
 
@@ -102,6 +108,13 @@ function TrilaterationSandbox(props) {
     context.lineWidth = '2'
     context.stroke()
 
+    const drawResult = (result, colour) => {
+      context.beginPath()
+      context.arc(result.x, result.y, 5, 0, 2 * Math.PI)
+      context.fillStyle = colour
+      context.fill()
+    }
+
     // calculate result spot
     const distance = (loc1, loc2) => {
       return Math.pow(Math.pow(loc1.x - loc2.x, 2) + Math.pow(loc1.y - loc2.y, 2), 0.5)
@@ -126,16 +139,35 @@ function TrilaterationSandbox(props) {
       beaconBDistance /= scaleAdjustment
       beaconCDistance /= scaleAdjustment
     }
-    const result = untransform(trilateration.calculate([
+    beaconADistance *= distanceScale
+    beaconBDistance *= distanceScale
+    beaconCDistance *= distanceScale
+    let result = trilateration.calculate([
       {...transformedBeaconA, distance: beaconADistance},
       {...transformedBeaconB, distance: beaconBDistance},
       {...transformedBeaconC, distance: beaconCDistance},
-    ]))
+    ])
+    if (drawTransformation) {
+      drawResult(result, '#44e3')
+    }
+    result = untransform(result)
+
+    // draw calculation visualisation
+    const drawDistance = (beacon, distance, colour) => {
+      context.beginPath()
+      context.arc(beacon.x, beacon.y, distance, 0, 2 * Math.PI)
+      context.strokeStyle = colour
+      context.lineWidth = '1'
+      context.stroke()
+    }
+    if (drawCalculation) {
+      drawDistance(transform(beaconA), beaconADistance,  '#0b03')
+      drawDistance(transform(beaconB), beaconBDistance, '#e0e3')
+      drawDistance(transform(beaconC), beaconCDistance, '#f003')
+    }
+
     // draw result spot
-    context.beginPath()
-    context.arc(result.x, result.y, 5, 0, 2 * Math.PI)
-    context.fillStyle = '#44e'
-    context.fill()
+    drawResult(result, '#44e')
   }
 
   const updateTestSpot = (event) => {
@@ -198,8 +230,14 @@ function TrilaterationSandbox(props) {
   const handleUniformScaleAdjustmentChange = (event) => {
     setUniformScaleAdjustment(event.target.checked)
   }
+  const handleDistanceScaleChange = (event) => {
+    setDistanceScale(event.target.value)
+  }
   const handleDrawTransformationChange = (event) => {
     setDrawTransformation(event.target.checked)
+  }
+  const handleDrawCalculationChange = (event) => {
+    setDrawCalculation(event.target.checked)
   }
 
   // document mouse listener
@@ -221,7 +259,9 @@ function TrilaterationSandbox(props) {
     xScale,
     yScale,
     uniformScaleAdjustment,
+    distanceScale,
     drawTransformation,
+    drawCalculation,
   ])
 
   return (
@@ -280,9 +320,9 @@ function TrilaterationSandbox(props) {
         <label>X Scale</label>
         <input
           type="range"
-          min={SCALE_MIN}
-          max={SCALE_MAX}
-          step={SCALE_STEP}
+          min={BEACON_SCALE_MIN}
+          max={BEACON_SCALE_MAX}
+          step={BEACON_SCALE_STEP}
           value={xScale}
           onChange={handleXScaleChange}
         />
@@ -292,9 +332,9 @@ function TrilaterationSandbox(props) {
         <label>Y Scale</label>
         <input
           type="range"
-          min={SCALE_MIN}
-          max={SCALE_MAX}
-          step={SCALE_STEP}
+          min={BEACON_SCALE_MIN}
+          max={BEACON_SCALE_MAX}
+          step={BEACON_SCALE_STEP}
           value={yScale}
           onChange={handleYScaleChange}
         />
@@ -324,6 +364,18 @@ function TrilaterationSandbox(props) {
         </p>
       </div>
       <div>
+        <label>Distance Scale</label>
+        <input
+          type="range"
+          min={DISTANCE_SCALE_MIN}
+          max={DISTANCE_SCALE_MAX}
+          step={DISTANCE_SCALE_STEP}
+          value={distanceScale}
+          onChange={handleDistanceScaleChange}
+        />
+        <input type="text" value={distanceScale} onChange={handleDistanceScaleChange} />
+      </div>
+      <div>
         <label>
           <input
             type="checkbox"
@@ -331,6 +383,16 @@ function TrilaterationSandbox(props) {
             onChange={handleDrawTransformationChange}
           />
           Draw Transformation (for debug purposes)
+        </label>
+      </div>
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={drawCalculation}
+            onChange={handleDrawCalculationChange}
+          />
+          Draw Calculation Visualisation
         </label>
       </div>
       <canvas
