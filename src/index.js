@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import ReactDom from 'react-dom'
 import trilateration from 'node-trilateration'
+import seedRandom from 'seedrandom'
 
 const CANVAS_WIDTH = 1000
 const CANVAS_HEIGHT = 600
@@ -18,6 +19,10 @@ const BEACON_SCALE_STEP = 0.025
 const DISTANCE_SCALE_MIN = 0.1
 const DISTANCE_SCALE_MAX = 5
 const DISTANCE_SCALE_STEP = 0.025
+
+const NOISE_MIN = 0
+const NOISE_MAX = 100
+const NOISE_STEP = 1
 
 function TrilaterationSandbox(props) {
   const canvasRef = useRef(null)
@@ -37,6 +42,7 @@ function TrilaterationSandbox(props) {
   const [distanceScale, setDistanceScale] = useState(1)
   const [drawTransformation, setDrawTransformation] = useState(false)
   const [drawCalculation, setDrawCalculation] = useState(true)
+  const [noise, setNoise] = useState(0)
 
   const [clicking, setClicking] = useState(false)
 
@@ -46,12 +52,16 @@ function TrilaterationSandbox(props) {
     }
     const context = canvasRef.current.getContext('2d')
 
+    const seed = Math.random()
+
     const radian = (degree) => {
       return (degree / 180) * Math.PI
     }
-    const transform = (loc) => {
+    const transform = (loc, rng) => {
       let x = loc.x
       let y = loc.y
+      x += (rng() - 0.5) * noise
+      y += (rng() - 0.5) * noise
       x += +xTranslation
       y += +yTranslation
       const rotationRadian = radian(rotation)
@@ -96,9 +106,10 @@ function TrilaterationSandbox(props) {
     drawBeacon(beaconC, '#f00')
 
     if (drawTransformation) {
-      drawBeacon(transform(beaconA), '#0b03')
-      drawBeacon(transform(beaconB), '#e0e3')
-      drawBeacon(transform(beaconC), '#f003')
+      const rng = seedRandom(seed)
+      drawBeacon(transform(beaconA, rng), '#0b03')
+      drawBeacon(transform(beaconB, rng), '#e0e3')
+      drawBeacon(transform(beaconC, rng), '#f003')
     }
 
     // draw test spot
@@ -119,9 +130,10 @@ function TrilaterationSandbox(props) {
     const distance = (loc1, loc2) => {
       return Math.pow(Math.pow(loc1.x - loc2.x, 2) + Math.pow(loc1.y - loc2.y, 2), 0.5)
     }
-    const transformedBeaconA = transform(beaconA)
-    const transformedBeaconB = transform(beaconB)
-    const transformedBeaconC = transform(beaconC)
+    const rng = seedRandom(seed)
+    const transformedBeaconA = transform(beaconA, rng)
+    const transformedBeaconB = transform(beaconB, rng)
+    const transformedBeaconC = transform(beaconC, rng)
     let beaconADistance = distance(testSpot, beaconA)
     let beaconBDistance = distance(testSpot, beaconB)
     let beaconCDistance = distance(testSpot, beaconC)
@@ -161,9 +173,10 @@ function TrilaterationSandbox(props) {
       context.stroke()
     }
     if (drawCalculation) {
-      drawDistance(transform(beaconA), beaconADistance,  '#0b03')
-      drawDistance(transform(beaconB), beaconBDistance, '#e0e3')
-      drawDistance(transform(beaconC), beaconCDistance, '#f003')
+      const rng = seedRandom(seed)
+      drawDistance(transform(beaconA, rng), beaconADistance,  '#0b03')
+      drawDistance(transform(beaconB, rng), beaconBDistance, '#e0e3')
+      drawDistance(transform(beaconC, rng), beaconCDistance, '#f003')
     }
 
     // draw result spot
@@ -233,6 +246,9 @@ function TrilaterationSandbox(props) {
   const handleDistanceScaleChange = (event) => {
     setDistanceScale(event.target.value)
   }
+  const handleNoiseChange = (event) => {
+    setNoise(event.target.value)
+  }
   const handleDrawTransformationChange = (event) => {
     setDrawTransformation(event.target.checked)
   }
@@ -260,6 +276,7 @@ function TrilaterationSandbox(props) {
     yScale,
     uniformScaleAdjustment,
     distanceScale,
+    noise,
     drawTransformation,
     drawCalculation,
   ])
@@ -374,6 +391,18 @@ function TrilaterationSandbox(props) {
           onChange={handleDistanceScaleChange}
         />
         <input type="text" value={distanceScale} onChange={handleDistanceScaleChange} />
+      </div>
+      <div>
+        <label>Noise</label>
+        <input
+          type="range"
+          min={NOISE_MIN}
+          max={NOISE_MAX}
+          step={NOISE_STEP}
+          value={noise}
+          onChange={handleNoiseChange}
+        />
+        <input type="text" value={noise} onChange={handleNoiseChange} />
       </div>
       <div>
         <label>
